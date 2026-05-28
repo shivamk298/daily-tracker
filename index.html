@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Shivam's Daily Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#0d0f14; --surface:#13161e; --surface2:#1a1e29;
+  --border:rgba(255,255,255,0.07); --text:#e8eaf0; --muted:#6b7280;
+  --accent:#f0a500;
+  --morning:#f59e0b; --afternoon:#3b82f6; --evening:#8b5cf6; --night-c:#ec4899;
+  --exercise:#10b981; --food:#f59e0b; --study:#6366f1; --sports:#3b82f6; --sleep:#8b5cf6;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;padding:36px 18px 64px;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 80% 8%,rgba(99,102,241,.07) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 40% at 10% 85%,rgba(236,72,153,.05) 0%,transparent 70%);
+}
+.wrapper{max-width:740px;margin:0 auto}
+
+/* ── HEADER ── */
+.hdr{text-align:center;margin-bottom:30px;animation:fadeDown .7s ease both}
+.hdr-sup{
+  font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--accent);
+  display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:12px
+}
+.hdr-sup::before,.hdr-sup::after{content:'';width:36px;height:1px}
+.hdr-sup::before{background:linear-gradient(90deg,transparent,var(--accent))}
+.hdr-sup::after{background:linear-gradient(90deg,var(--accent),transparent)}
+.hdr h1{font-family:'Playfair Display',serif;font-size:clamp(1.9rem,5vw,3rem);
+  font-weight:700;line-height:1.1;margin-bottom:6px}
+.hdr h1 span{color:var(--accent);font-style:italic}
+.hdr-sub{font-size:13px;color:var(--muted);letter-spacing:.04em;font-weight:300}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;gap:6px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;padding:5px;margin-bottom:26px
+}
+.tab{
+  flex:1;background:none;border:none;
+  color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:13.5px;font-weight:500;
+  padding:9px 14px;border-radius:10px;cursor:pointer;transition:all .2s
+}
+.tab:hover{color:var(--text);background:rgba(255,255,255,0.04)}
+.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+
+/* ── PANEL ── */
+.panel{animation:fadeUp .4s ease both}
+.panel.hidden{display:none}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:30px}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:14px;
+  padding:13px 10px;text-align:center}
+.sc-icon{font-size:17px;margin-bottom:4px}
+.sc-val{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;
+  line-height:1;margin-bottom:3px}
+.sc-lbl{font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+
+/* ── SECTION ── */
+.sec{margin-bottom:26px}
+.sec-hdr{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.sec-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.sec-title{font-family:'DM Mono',monospace;font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;font-weight:500}
+.sec-line{flex:1;height:1px;background:var(--border)}
+.sec-badge{font-size:10px;font-family:'DM Mono',monospace;padding:3px 9px;
+  border-radius:20px;letter-spacing:.05em;border:1px solid currentColor;opacity:.7}
+
+.morning  .sec-title,.morning  .sec-badge{color:var(--morning)}
+.afternoon.sec-title,.afternoon.sec-badge,.afternoon .sec-title,.afternoon .sec-badge{color:var(--afternoon)}
+.evening  .sec-title,.evening  .sec-badge{color:var(--evening)}
+.night-sec.sec-title,.night-sec.sec-badge,.night-sec  .sec-title,.night-sec  .sec-badge{color:var(--night-c)}
+.morning  .sec-dot{background:var(--morning)}
+.afternoon .sec-dot{background:var(--afternoon)}
+.evening  .sec-dot{background:var(--evening)}
+.night-sec .sec-dot{background:var(--night-c)}
+
+/* ── BLOCK ── */
+.blk{display:flex;gap:14px;align-items:stretch;margin-bottom:9px}
+.blk.done .bc{opacity:.55}
+.blk.done .bn{text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)}
+
+.tc{width:80px;flex-shrink:0;display:flex;flex-direction:column;
+  align-items:flex-end;justify-content:flex-start;padding-top:13px;gap:2px}
+.ts{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;
+  color:var(--text);line-height:1}
+.te{font-family:'DM Mono',monospace;font-size:9.5px;color:var(--muted)}
+
+.conn{width:2px;background:var(--border);flex-shrink:0;border-radius:2px;
+  position:relative;margin:13px 0 -2px}
+.conn::before{content:'';position:absolute;top:-1px;left:50%;
+  transform:translateX(-50%);width:7px;height:7px;border-radius:50%;
+  background:var(--surface);border:2px solid var(--muted)}
+
+.bc{flex:1;border-radius:13px;padding:11px 15px;border:1px solid var(--border);
+  display:flex;align-items:center;gap:11px;position:relative;overflow:hidden;
+  transition:opacity .25s,border-color .2s}
+.bc:hover{border-color:rgba(255,255,255,.12)}
+.bc::before{content:'';position:absolute;left:0;top:0;bottom:0;
+  width:3px;border-radius:3px 0 0 3px}
+
+.be{font-size:21px;flex-shrink:0;width:38px;height:38px;display:flex;
+  align-items:center;justify-content:center;border-radius:9px;
+  background:rgba(255,255,255,.04)}
+.bi{flex:1;min-width:0}
+.bn{font-size:13.5px;font-weight:600;margin-bottom:2px;transition:all .2s}
+.bd{font-size:11px;color:var(--muted);font-weight:300}
+.dur{flex-shrink:0;font-family:'DM Mono',monospace;font-size:11px;
+  font-weight:500;padding:4px 10px;border-radius:20px;
+  background:rgba(255,255,255,.05);color:var(--muted);white-space:nowrap}
+
+/* Accent bars */
+[data-t="exercise"] .bc::before{background:var(--exercise)}
+[data-t="food"]     .bc::before{background:var(--food)}
+[data-t="study"]    .bc::before{background:var(--study)}
+[data-t="sports"]   .bc::before{background:var(--sports)}
+[data-t="sleep"]    .bc::before{background:var(--sleep)}
+[data-t="movie"]    .bc::before{background:var(--night-c)}
+[data-t="free"]     .bc::before{background:var(--muted)}
+
+[data-t="exercise"] .bn{color:var(--exercise)}
+[data-t="study"]    .bn{color:var(--study)}
+[data-t="sports"]   .bn{color:var(--sports)}
+[data-t="movie"]    .bn{color:var(--night-c)}
+[data-t="sleep"]    .bn{color:var(--sleep)}
+
+/* Section bg tints */
+.morning   .bc{background:rgba(245,158,11,.06)}
+.afternoon .bc{background:rgba(59,130,246,.06)}
+.evening   .bc{background:rgba(139,92,246,.06)}
+.night-sec .bc{background:rgba(236,72,153,.06)}
+
+/* ── CHECKBOX BUTTON ── */
+.cbtn{
+  flex-shrink:0;width:28px;height:28px;border-radius:8px;
+  border:2px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:13px;transition:all .18s;color:transparent;user-select:none
+}
+.cbtn:hover{border-color:rgba(255,255,255,.28);background:rgba(255,255,255,.07)}
+.cbtn.on{color:#fff}
+[data-t="exercise"] .cbtn.on{background:var(--exercise);border-color:var(--exercise)}
+[data-t="study"]    .cbtn.on{background:var(--study);border-color:var(--study)}
+[data-t="sports"]   .cbtn.on{background:var(--sports);border-color:var(--sports)}
+[data-t="movie"]    .cbtn.on{background:var(--night-c);border-color:var(--night-c)}
+
+/* ── NIGHT TOGGLE ── */
+.ntgl{display:flex;gap:5px;flex-shrink:0}
+.ntbtn{
+  padding:4px 11px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.11);background:transparent;
+  color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:11px;font-weight:500;cursor:pointer;transition:all .2s
+}
+.ntbtn:hover{border-color:rgba(255,255,255,.24);color:var(--text)}
+.ntbtn.as{background:rgba(99,102,241,.18);border-color:var(--study);color:#a5b4fc}
+.ntbtn.am{background:rgba(236,72,153,.14);border-color:var(--night-c);color:#f9a8d4}
+
+/* ── REMARK ── */
+.rmk{
+  margin-top:22px;background:var(--surface);
+  border:1px solid var(--border);border-radius:16px;padding:16px
+}
+.rmk-lbl{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.15em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.rmk-ta{
+  width:100%;background:var(--surface2);border:1px solid var(--border);
+  border-radius:10px;padding:11px 13px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:13px;resize:none;
+  min-height:68px;transition:border-color .2s
+}
+.rmk-ta:focus{outline:none;border-color:rgba(255,255,255,.2)}
+.rmk-ta::placeholder{color:var(--muted)}
+.save-ind{margin-top:7px;font-size:11px;color:var(--muted);text-align:right;
+  height:15px;transition:all .3s;font-family:'DM Mono',monospace}
+.save-ind.ok{color:var(--exercise)}
+
+/* ── HISTORY STATS ── */
+.hstats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+
+/* ── HISTORY TABLE ── */
+.htable-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.htable-top{display:flex;align-items:center;justify-content:space-between;
+  padding:15px 18px;border-bottom:1px solid var(--border)}
+.htable-title{font-family:'Playfair Display',serif;font-size:17px;font-weight:700}
+.htable-ct{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)}
+.tscroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);padding:9px 11px;
+  text-align:left;border-bottom:1px solid var(--border);background:var(--surface2)
+}
+tbody td{padding:10px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:rgba(255,255,255,.02)}
+
+.chk{width:20px;height:20px;border-radius:6px;display:inline-flex;
+  align-items:center;justify-content:center;font-size:11px}
+.chk.y{background:rgba(16,185,129,.14);color:#10b981}
+.chk.n{background:rgba(255,255,255,.04);color:var(--muted)}
+
+.nbadge{padding:3px 8px;border-radius:10px;font-size:10px;font-family:'DM Mono',monospace}
+.nbadge.s{background:rgba(99,102,241,.15);color:#a5b4fc}
+.nbadge.m{background:rgba(236,72,153,.13);color:#f9a8d4}
+
+.shbar{display:flex;align-items:center;gap:6px}
+.barbg{flex:1;height:4px;background:rgba(255,255,255,.06);border-radius:2px;
+  overflow:hidden;min-width:44px}
+.barfill{height:100%;background:var(--study);border-radius:2px;transition:width .3s}
+.barlbl{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);
+  width:28px;flex-shrink:0;text-align:right}
+
+.rmk-cell{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--muted);font-size:11px;font-style:italic}
+.dc{font-family:'DM Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap}
+.dc small{font-size:9px;color:var(--muted);display:block;margin-top:1px}
+.today-pill{display:inline-block;background:var(--accent);color:#000;
+  font-size:7.5px;font-family:'DM Mono',monospace;padding:1px 5px;
+  border-radius:4px;margin-left:4px;font-weight:700;vertical-align:middle}
+
+.empty{text-align:center;padding:44px 20px;color:var(--muted)}
+.empty .ei{font-size:38px;margin-bottom:10px}
+.empty p{font-size:13px}
+.empty small{font-size:11.5px;opacity:.7;margin-top:5px;display:block}
+
+/* ── FOOTER ── */
+.ftr{text-align:center;margin-top:36px;padding-top:22px;border-top:1px solid var(--border)}
+.ftr p{font-size:11.5px;color:var(--muted);letter-spacing:.06em;margin-bottom:10px}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:10px}
+.li{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.ld{width:8px;height:8px;border-radius:50%}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:500px){
+  .stats,.hstats{grid-template-columns:repeat(2,1fr)}
+  .tc{width:64px}
+  .bc{padding:10px 12px}
+  .ntgl{flex-direction:column;gap:4px}
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-sup">✦ Shivam's Tracker ✦</div>
+  <h1>Daily <span>Routine</span></h1>
+  <p class="hdr-sub" id="date-lbl">—</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('today')">📅 Today</button>
+  <button class="tab"        onclick="switchTab('history')">📊 History</button>
+</div>
+
+<!-- ══════════════════════ TODAY PANEL ══════════════════════ -->
+<div id="panel-today" class="panel">
+
+  <div class="stats">
+    <div class="sc"><div class="sc-icon">📚</div>
+      <div class="sc-val" id="s-study" style="color:var(--study)">0h</div>
+      <div class="sc-lbl">Study</div></div>
+    <div class="sc"><div class="sc-icon">✅</div>
+      <div class="sc-val" id="s-done" style="color:var(--exercise)">0/5</div>
+      <div class="sc-lbl">Done</div></div>
+    <div class="sc"><div class="sc-icon">🔥</div>
+      <div class="sc-val" id="s-streak" style="color:var(--accent)">0</div>
+      <div class="sc-lbl">Streak</div></div>
+    <div class="sc"><div class="sc-icon">🌙</div>
+      <div class="sc-val" id="s-night" style="color:var(--night-c);font-size:13px;padding-top:5px">—</div>
+      <div class="sc-lbl">Tonight</div></div>
+  </div>
+
+  <!-- MORNING -->
+  <div class="sec morning">
+    <div class="sec-hdr">
+      <div class="sec-dot"></div>
+      <span class="sec-title">Morning</span>
+      <div class="sec-line"></div>
+      <span class="sec-badge">08:00 – 10:30</span>
+    </div>
+
+    <div class="blk" data-t="sleep">
+      <div class="tc"><span class="ts">08:00</span><span class="te">AM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">⏰</div>
+        <div class="bi"><div class="bn" style="color:var(--sleep)">Wake Up</div>
+          <div class="bd">Rise, hydrate, freshen up</div></div>
+        <div class="dur">— start —</div>
+      </div>
+    </div>
+
+    <div class="blk" id="blk-exercise" data-t="exercise">
+      <div class="tc"><span class="ts">08:30</span><span class="te">AM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">🏃</div>
+        <div class="bi"><div class="bn">Exercise</div>
+          <div class="bd">Workout · Stretching · Cool-down</div></div>
+        <div class="dur">45 min</div>
+        <button class="cbtn" id="cb-exercise" onclick="toggle('exercise')" title="Mark done">✓</button>
+      </div>
+    </div>
+
+    <div class="blk" data-t="food">
+      <div class="tc"><span class="ts">09:20</span><span class="te">AM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">🍳</div>
+        <div class="bi"><div class="bn" style="color:var(--food)">Breakfast</div>
+          <div class="bd">Nourish & energise for the day</div></div>
+        <div class="dur">40 min</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AFTERNOON -->
+  <div class="sec afternoon">
+    <div class="sec-hdr">
+      <div class="sec-dot"></div>
+      <span class="sec-title">Afternoon</span>
+      <div class="sec-line"></div>
+      <span class="sec-badge">10:30 – 05:30</span>
+    </div>
+
+    <div class="blk" id="blk-library1" data-t="study">
+      <div class="tc"><span class="ts">10:30</span><span class="te">AM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">📚</div>
+        <div class="bi"><div class="bn">Library — Session I</div>
+          <div class="bd">Deep focus · No distractions</div></div>
+        <div class="dur">3 h</div>
+        <button class="cbtn" id="cb-library1" onclick="toggle('library1')" title="Mark done">✓</button>
+      </div>
+    </div>
+
+    <div class="blk" data-t="food">
+      <div class="tc"><span class="ts">01:30</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">🍱</div>
+        <div class="bi"><div class="bn" style="color:var(--food)">Lunch</div>
+          <div class="bd">Rest your mind · Refuel</div></div>
+        <div class="dur">1 h</div>
+      </div>
+    </div>
+
+    <div class="blk" id="blk-library2" data-t="study">
+      <div class="tc"><span class="ts">02:30</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">🔬</div>
+        <div class="bi"><div class="bn">Library — Session II</div>
+          <div class="bd">Problem-solving · Revision</div></div>
+        <div class="dur">3 h</div>
+        <button class="cbtn" id="cb-library2" onclick="toggle('library2')" title="Mark done">✓</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EVENING -->
+  <div class="sec evening">
+    <div class="sec-hdr">
+      <div class="sec-dot"></div>
+      <span class="sec-title">Evening</span>
+      <div class="sec-line"></div>
+      <span class="sec-badge">05:30 – 09:30</span>
+    </div>
+
+    <div class="blk" data-t="free">
+      <div class="tc"><span class="ts">05:30</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">☕</div>
+        <div class="bi"><div class="bn" style="color:var(--muted)">Wind-down Break</div>
+          <div class="bd">Freshen up · Short walk · Snack</div></div>
+        <div class="dur">30 min</div>
+      </div>
+    </div>
+
+    <div class="blk" id="blk-sports" data-t="sports">
+      <div class="tc"><span class="ts">06:00</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">⚽</div>
+        <div class="bi"><div class="bn">Sports</div>
+          <div class="bd">Play · Compete · Unwind</div></div>
+        <div class="dur">2 h</div>
+        <button class="cbtn" id="cb-sports" onclick="toggle('sports')" title="Mark done">✓</button>
+      </div>
+    </div>
+
+    <div class="blk" data-t="food">
+      <div class="tc"><span class="ts">08:30</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">🍛</div>
+        <div class="bi"><div class="bn" style="color:var(--food)">Dinner</div>
+          <div class="bd">Warm meal · Calm down</div></div>
+        <div class="dur">45 min</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NIGHT -->
+  <div class="sec night-sec">
+    <div class="sec-hdr">
+      <div class="sec-dot"></div>
+      <span class="sec-title">Night</span>
+      <div class="sec-line"></div>
+      <span class="sec-badge">09:30 – 01:00</span>
+    </div>
+
+    <div class="blk" id="blk-night" data-t="study">
+      <div class="tc"><span class="ts">09:30</span><span class="te">PM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be" id="night-emoji">🌙</div>
+        <div class="bi">
+          <div class="bn" id="night-name">Night Study Session</div>
+          <div class="bd" id="night-detail">Notes · Assignments · Practice problems</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0">
+          <div class="ntgl">
+            <button class="ntbtn" id="btn-study" onclick="setNightMode('study')">📖 Study</button>
+            <button class="ntbtn" id="btn-movie" onclick="setNightMode('movie')">🎬 Movie</button>
+          </div>
+          <button class="cbtn" id="cb-night" onclick="toggle('nightDone')" title="Mark done" style="align-self:flex-end">✓</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="blk" data-t="sleep">
+      <div class="tc"><span class="ts">01:00</span><span class="te">AM</span></div>
+      <div class="conn"></div>
+      <div class="bc">
+        <div class="be">😴</div>
+        <div class="bi"><div class="bn" style="color:var(--sleep)">Sleep</div>
+          <div class="bd">7 hours · Rest & recover</div></div>
+        <div class="dur">7 h</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REMARK -->
+  <div class="rmk">
+    <div class="rmk-lbl">📝 Daily Remark <span style="opacity:.5">(optional)</span></div>
+    <textarea class="rmk-ta" id="remark-ta" placeholder="How was your day? Wins, struggles, things to improve…" oninput="onRmk()"></textarea>
+    <div class="save-ind" id="save-ind">—</div>
+  </div>
+
+</div><!-- /panel-today -->
+
+<!-- ══════════════════════ HISTORY PANEL ══════════════════════ -->
+<div id="panel-history" class="panel hidden">
+
+  <div class="hstats">
+    <div class="sc"><div class="sc-icon">📅</div>
+      <div class="sc-val" id="hs-days" style="color:var(--accent)">0</div>
+      <div class="sc-lbl">Days Logged</div></div>
+    <div class="sc"><div class="sc-icon">🔥</div>
+      <div class="sc-val" id="hs-streak" style="color:var(--morning)">0</div>
+      <div class="sc-lbl">Best Streak</div></div>
+    <div class="sc"><div class="sc-icon">📚</div>
+      <div class="sc-val" id="hs-avg" style="color:var(--study)">0h</div>
+      <div class="sc-lbl">Avg Study</div></div>
+    <div class="sc"><div class="sc-icon">🎬</div>
+      <div class="sc-val" id="hs-movies" style="color:var(--night-c)">0</div>
+      <div class="sc-lbl">Movie Nights</div></div>
+  </div>
+
+  <div class="htable-wrap">
+    <div class="htable-top">
+      <span class="htable-title">Activity Log</span>
+      <span class="htable-ct" id="h-count">0 entries</span>
+    </div>
+    <div class="tscroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th title="Exercise">🏃</th>
+            <th title="Library Session I">📚 I</th>
+            <th title="Library Session II">🔬 II</th>
+            <th title="Sports">⚽</th>
+            <th>Night</th>
+            <th>Study Hrs</th>
+            <th>Remark</th>
+          </tr>
+        </thead>
+        <tbody id="h-body">
+          <tr><td colspan="8">
+            <div class="empty">
+              <div class="ei">📭</div>
+              <p>No history yet</p>
+              <small>Start checking off today's tasks!</small>
+            </div>
+          </td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /panel-history -->
+
+<div class="ftr">
+  <p>Consistency beats motivation — show up every single day.</p>
+  <div class="legend">
+    <div class="li"><div class="ld" style="background:var(--exercise)"></div>Exercise</div>
+    <div class="li"><div class="ld" style="background:var(--food)"></div>Meals</div>
+    <div class="li"><div class="ld" style="background:var(--study)"></div>Study</div>
+    <div class="li"><div class="ld" style="background:var(--sports)"></div>Sports</div>
+    <div class="li"><div class="ld" style="background:var(--sleep)"></div>Sleep</div>
+  </div>
+</div>
+
+</div><!-- /wrapper -->
+
+<script>
+// ═══════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════
+const KEY = 'shivam_routine_v1';
+
+function getAll()           { try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return{}} }
+function getDay(d)          { return getAll()[d] || defDay(d) }
+function saveDay(data)      { const a=getAll(); a[data.date]={...data,savedAt:Date.now()}; localStorage.setItem(KEY,JSON.stringify(a)) }
+function defDay(date)       { return {date,exercise:false,library1:false,library2:false,sports:false,nightMode:'study',nightDone:false,remark:''} }
+
+function studyHrs(day) {
+  let h = 0;
+  if(day.library1) h+=3;
+  if(day.library2) h+=3;
+  if(day.nightMode==='study' && day.nightDone) h+=3.5;
+  return h;
+}
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+function dateStr(offset=0) {
+  const d = new Date(); d.setDate(d.getDate()+offset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+const TODAY = dateStr();
+let state = getDay(TODAY);
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+function init() {
+  const d = new Date();
+  document.getElementById('date-lbl').textContent =
+    d.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  renderToday();
+}
+
+// ═══════════════════════════════════════
+// RENDER TODAY
+// ═══════════════════════════════════════
+function renderToday() {
+  applyCheck('exercise', state.exercise);
+  applyCheck('library1', state.library1);
+  applyCheck('library2', state.library2);
+  applyCheck('sports',   state.sports);
+  applyCheck('night',    state.nightDone);
+  applyNightMode(state.nightMode);
+  document.getElementById('remark-ta').value = state.remark || '';
+  refreshStats();
+}
+
+function applyCheck(id, val) {
+  const btn  = document.getElementById('cb-'+id);
+  const blk  = document.getElementById('blk-'+(id==='night'?'night':id));
+  if(btn) btn.classList.toggle('on', val);
+  if(blk) blk.classList.toggle('done', val);
+}
+
+function applyNightMode(mode) {
+  const bs = document.getElementById('btn-study');
+  const bm = document.getElementById('btn-movie');
+  const nm = document.getElementById('night-name');
+  const nd = document.getElementById('night-detail');
+  const ne = document.getElementById('night-emoji');
+  const nb = document.getElementById('blk-night');
+
+  bs.className = 'ntbtn'+(mode==='study'?' as':'');
+  bm.className = 'ntbtn'+(mode==='movie'?' am':'');
+
+  if(mode==='study') {
+    nm.textContent='Night Study Session';
+    nd.textContent='Notes · Assignments · Practice problems';
+    ne.textContent='🌙';
+    nb.setAttribute('data-t','study');
+  } else {
+    nm.textContent='Movie Night';
+    nd.textContent='Relax · Watch something great · Unwind';
+    ne.textContent='🎬';
+    nb.setAttribute('data-t','movie');
+  }
+  document.getElementById('s-night').textContent = mode==='study' ? '📖 Study' : '🎬 Movie';
+}
+
+function refreshStats() {
+  document.getElementById('s-study').textContent   = studyHrs(state)+'h';
+  const done = [state.exercise,state.library1,state.library2,state.sports,state.nightDone].filter(Boolean).length;
+  document.getElementById('s-done').textContent    = done+'/5';
+  document.getElementById('s-streak').textContent  = calcCurStreak();
+}
+
+function calcCurStreak() {
+  const all=getAll(); let streak=0;
+  const d=new Date();
+  for(let i=0;i<365;i++) {
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const day=all[k];
+    if(!day){ if(i===0){d.setDate(d.getDate()-1);continue} else break }
+    if(day.library1||day.library2||(day.nightMode==='study'&&day.nightDone)) streak++;
+    else { if(i===0){d.setDate(d.getDate()-1);continue} else break }
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
+
+function calcBestStreak(all) {
+  const dates=Object.keys(all).sort(); let best=0,cur=0,prev=null;
+  for(const d of dates) {
+    const day=all[d];
+    const hs=day.library1||day.library2||(day.nightMode==='study'&&day.nightDone);
+    if(!prev){ cur=hs?1:0 }
+    else {
+      const diff=(new Date(d)-new Date(prev))/86400000;
+      if(diff===1&&hs) cur++; else cur=hs?1:0;
+    }
+    if(cur>best) best=cur; prev=d;
+  }
+  return best;
+}
+
+// ═══════════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════════
+function toggle(key) {
+  state[key]=!state[key];
+  applyCheck(key==='nightDone'?'night':key, state[key]);
+  refreshStats(); persist();
+}
+
+function setNightMode(mode) {
+  state.nightMode=mode;
+  applyNightMode(mode);
+  refreshStats(); persist();
+}
+
+let rmkTimer;
+function onRmk() {
+  state.remark=document.getElementById('remark-ta').value;
+  clearTimeout(rmkTimer);
+  setSaveInd('Saving…',false);
+  rmkTimer=setTimeout(()=>{ persist(); setSaveInd('✓ Saved',true);
+    setTimeout(()=>setSaveInd('—',false),1800); },800);
+}
+
+function persist() { saveDay(state); setSaveInd('✓ Saved',true); setTimeout(()=>setSaveInd('—',false),1500) }
+
+function setSaveInd(txt,ok) {
+  const el=document.getElementById('save-ind');
+  el.textContent=txt; el.className='save-ind'+(ok?' ok':'');
+}
+
+// ═══════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',(i===0&&tab==='today')||(i===1&&tab==='history'));
+  });
+  document.getElementById('panel-today').classList.toggle('hidden',tab!=='today');
+  document.getElementById('panel-history').classList.toggle('hidden',tab!=='history');
+  if(tab==='history') renderHistory();
+}
+
+// ═══════════════════════════════════════
+// RENDER HISTORY
+// ═══════════════════════════════════════
+function renderHistory() {
+  const all=getAll();
+  const entries=Object.values(all).sort((a,b)=>b.date.localeCompare(a.date));
+  const total=entries.length;
+  const movies=entries.filter(d=>d.nightMode==='movie'&&d.nightDone).length;
+  const totalSH=entries.reduce((s,d)=>s+studyHrs(d),0);
+  const avg=total?(totalSH/total).toFixed(1):0;
+
+  document.getElementById('hs-days').textContent   = total;
+  document.getElementById('hs-streak').textContent = calcBestStreak(all);
+  document.getElementById('hs-avg').textContent    = avg+'h';
+  document.getElementById('hs-movies').textContent = movies;
+  document.getElementById('h-count').textContent   = `${total} entr${total===1?'y':'ies'}`;
+
+  const tbody=document.getElementById('h-body');
+  if(!total) {
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="ei">📭</div><p>No history yet</p><small>Start checking off today's tasks!</small></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML=entries.map(day=>{
+    const isToday=day.date===TODAY;
+    const dt=new Date(day.date+'T00:00:00');
+    const dayName=dt.toLocaleDateString('en-IN',{weekday:'short'});
+    const dateLbl=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});
+    const sh=studyHrs(day); const pct=Math.round((sh/9.5)*100);
+    const nb=day.nightMode==='study'
+      ?`<span class="nbadge s">📖 ${day.nightDone?'✓':'—'}</span>`
+      :`<span class="nbadge m">🎬 ${day.nightDone?'✓':'—'}</span>`;
+    return `<tr>
+      <td class="dc">${dateLbl}${isToday?'<span class="today-pill">TODAY</span>':''}
+        <small>${dayName}</small></td>
+      <td>${ck(day.exercise)}</td>
+      <td>${ck(day.library1)}</td>
+      <td>${ck(day.library2)}</td>
+      <td>${ck(day.sports)}</td>
+      <td>${nb}</td>
+      <td><div class="shbar">
+        <div class="barbg"><div class="barfill" style="width:${pct}%"></div></div>
+        <span class="barlbl">${sh}h</span>
+      </div></td>
+      <td class="rmk-cell" title="${esc(day.remark||'')}">${day.remark?esc(day.remark):'<span style="opacity:.3">—</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function ck(v){ return `<span class="chk ${v?'y':'n'}">${v?'✓':'✗'}</span>` }
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+
+// ═══════════════════════════════════════
+// START
+// ═══════════════════════════════════════
+init();
+</script>
+</body>
+</html>
