@@ -247,11 +247,87 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
 @keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
+/* ── SYNC BADGE ── */
+.sync-badge{
+  display:inline-block;margin-top:8px;
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;
+  padding:3px 10px;border-radius:20px;transition:all .3s
+}
+.sync-badge.syncing{background:rgba(240,165,0,.12);color:var(--accent);border:1px solid rgba(240,165,0,.3)}
+.sync-badge.cloud{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.3)}
+.sync-badge.local{background:rgba(107,114,128,.12);color:var(--muted);border:1px solid rgba(107,114,128,.2)}
+
+/* ── HISTORY ROW HOVER / EDIT ── */
+tbody tr[data-date]:hover td { background:rgba(240,165,0,.04) }
+tbody tr[data-date].editing td { background:rgba(240,165,0,.07);border-bottom:none }
+.edit-hint{font-size:9px;color:var(--muted);margin-left:5px;opacity:0;transition:opacity .15s;vertical-align:middle}
+tbody tr[data-date]:hover .edit-hint{opacity:1}
+
+/* ── EDIT PANEL ── */
+.edit-panel{
+  background:var(--surface2);border:1px solid rgba(240,165,0,.25);
+  border-radius:14px;padding:16px 18px;margin:0;
+  animation:fadeUp .25s ease both
+}
+.ep-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.ep-title{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--accent)}
+.ep-title span{color:var(--text);text-transform:none;letter-spacing:0;font-family:'DM Sans',sans-serif;font-size:12px}
+.ep-close{background:none;border:none;color:var(--muted);font-size:15px;
+  cursor:pointer;padding:2px 6px;border-radius:6px;transition:all .15s}
+.ep-close:hover{color:var(--text);background:rgba(255,255,255,.07)}
+
+.ep-tasks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.ep-cbtn{
+  display:flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);
+  border-radius:10px;padding:7px 12px;cursor:pointer;transition:all .18s;
+  font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--muted)
+}
+.ep-cbtn:hover{border-color:rgba(255,255,255,.18);color:var(--text)}
+.ep-cbtn.on{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.4);color:#10b981}
+.ep-icon{font-size:15px}
+.ep-chk{font-family:'DM Mono',monospace;font-size:12px;margin-left:2px}
+
+.ep-night-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.ep-nlabel{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em}
+.ep-ntbtn{
+  padding:4px 11px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.11);background:transparent;
+  color:var(--muted);font-family:'DM Sans',sans-serif;
+  font-size:11px;font-weight:500;cursor:pointer;transition:all .2s
+}
+.ep-ntbtn:hover{border-color:rgba(255,255,255,.24);color:var(--text)}
+.ep-ntbtn.as{background:rgba(99,102,241,.18);border-color:var(--study);color:#a5b4fc}
+.ep-ntbtn.am{background:rgba(236,72,153,.14);border-color:var(--night-c);color:#f9a8d4}
+
+.ep-rmk-row{margin-bottom:12px}
+.ep-rlabel{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:7px}
+.ep-rta{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:10px 12px;color:var(--text);
+  font-family:'DM Sans',sans-serif;font-size:13px;resize:none;
+  min-height:58px;transition:border-color .2s
+}
+.ep-rta:focus{outline:none;border-color:rgba(255,255,255,.2)}
+
+.ep-footer{display:flex;align-items:center;gap:12px}
+.ep-save{
+  background:var(--accent);color:#000;border:none;
+  border-radius:10px;padding:8px 18px;font-family:'DM Sans',sans-serif;
+  font-size:13px;font-weight:600;cursor:pointer;transition:all .18s
+}
+.ep-save:hover{opacity:.88;transform:translateY(-1px)}
+.ep-saved{font-family:'DM Mono',monospace;font-size:11px;color:var(--exercise)}
+
 @media(max-width:500px){
   .stats,.hstats{grid-template-columns:repeat(2,1fr)}
   .tc{width:64px}
   .bc{padding:10px 12px}
   .ntgl{flex-direction:column;gap:4px}
+  .ep-tasks{gap:6px}
+  .ep-cbtn{font-size:11.5px;padding:6px 9px}
 }
 </style>
 </head>
@@ -263,6 +339,7 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
   <div class="hdr-sup">✦ Shivam's Tracker ✦</div>
   <h1>Daily <span>Routine</span></h1>
   <p class="hdr-sub" id="date-lbl">—</p>
+  <div id="sync-badge" class="sync-badge syncing">↻ Loading…</div>
 </div>
 
 <!-- TABS -->
@@ -536,16 +613,65 @@ tbody tr:hover td{background:rgba(255,255,255,.02)}
 
 </div><!-- /wrapper -->
 
-<script>
+<script type="module">
 // ═══════════════════════════════════════
-// STORAGE
+// FIREBASE  — Firestore cross-device sync
 // ═══════════════════════════════════════
-const KEY = 'shivam_routine_v1';
+import { initializeApp }                          from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc }      from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
 
-function getAll()           { try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return{}} }
-function getDay(d)          { return getAll()[d] || defDay(d) }
-function saveDay(data)      { const a=getAll(); a[data.date]={...data,savedAt:Date.now()}; localStorage.setItem(KEY,JSON.stringify(a)) }
-function defDay(date)       { return {date,exercise:false,library1:false,library2:false,sports:false,nightMode:'study',nightDone:false,remark:''} }
+const firebaseConfig = {
+  apiKey:            "AIzaSyBAGV5oH6ssLzzLsWBJJ8bhv-8FP7Xf-D0",
+  authDomain:        "dailytracker-9eae2.firebaseapp.com",
+  projectId:         "dailytracker-9eae2",
+  storageBucket:     "dailytracker-9eae2.firebasestorage.app",
+  messagingSenderId: "693678140047",
+  appId:             "1:693678140047:web:11be646472c6581965defa"
+};
+
+const _app = initializeApp(firebaseConfig);
+const _db  = getFirestore(_app);
+
+// Single Firestore document holds all days:  users/shivam/data/routine
+const _docRef = doc(_db, 'users', 'shivam', 'data', 'routine');
+
+// ─── In-memory cache ───────────────────
+let _cache        = null;   // { "2025-05-30": { ...dayData }, … }
+let _storageReady = false;
+
+async function initStorage() {
+  try {
+    const snap = await getDoc(_docRef);
+    _cache        = snap.exists() ? (snap.data().days || {}) : {};
+    _storageReady = true;
+  } catch (e) {
+    console.warn('Firestore unavailable, falling back to localStorage', e);
+    try { _cache = JSON.parse(localStorage.getItem('shivam_routine_v1') || '{}'); } catch { _cache = {}; }
+    _storageReady = false;
+  }
+}
+
+function getAll() { return _cache || {}; }
+function getDay(d) { return getAll()[d] || defDay(d); }
+
+async function saveDay(data) {
+  if (!_cache) _cache = {};
+  _cache[data.date] = { ...data, savedAt: Date.now() };
+  try {
+    if (_storageReady) {
+      await setDoc(_docRef, { days: _cache });
+    } else {
+      localStorage.setItem('shivam_routine_v1', JSON.stringify(_cache));
+    }
+  } catch (e) {
+    console.error('Save failed', e);
+    try { localStorage.setItem('shivam_routine_v1', JSON.stringify(_cache)); } catch {}
+  }
+}
+
+function defDay(date) {
+  return {date,exercise:false,library1:false,library2:false,sports:false,nightMode:'study',nightDone:false,remark:''};
+}
 
 function studyHrs(day) {
   let h = 0;
@@ -563,15 +689,27 @@ function dateStr(offset=0) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 const TODAY = dateStr();
-let state = getDay(TODAY);
+let state = defDay(TODAY); // overwritten after storage loads
+
+// Past-day editing state
+let editingDate = null;
+let editState = null;
 
 // ═══════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════
-function init() {
+async function init() {
   const d = new Date();
   document.getElementById('date-lbl').textContent =
     d.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+  // Show a loading hint on the sync badge
+  setSyncBadge('syncing');
+
+  await initStorage();
+  state = getDay(TODAY);
+
+  setSyncBadge(_storageReady ? 'cloud' : 'local');
   renderToday();
 }
 
@@ -660,16 +798,16 @@ function calcBestStreak(all) {
 // ═══════════════════════════════════════
 // INTERACTIONS
 // ═══════════════════════════════════════
-function toggle(key) {
+async function toggle(key) {
   state[key]=!state[key];
   applyCheck(key==='nightDone'?'night':key, state[key]);
-  refreshStats(); persist();
+  refreshStats(); await persist();
 }
 
-function setNightMode(mode) {
+async function setNightMode(mode) {
   state.nightMode=mode;
   applyNightMode(mode);
-  refreshStats(); persist();
+  refreshStats(); await persist();
 }
 
 let rmkTimer;
@@ -677,11 +815,25 @@ function onRmk() {
   state.remark=document.getElementById('remark-ta').value;
   clearTimeout(rmkTimer);
   setSaveInd('Saving…',false);
-  rmkTimer=setTimeout(()=>{ persist(); setSaveInd('✓ Saved',true);
+  rmkTimer=setTimeout(async ()=>{ await persist(); setSaveInd('✓ Saved',true);
     setTimeout(()=>setSaveInd('—',false),1800); },800);
 }
 
-function persist() { saveDay(state); setSaveInd('✓ Saved',true); setTimeout(()=>setSaveInd('—',false),1500) }
+function setSyncBadge(status) {
+  const el = document.getElementById('sync-badge');
+  if (!el) return;
+  if (status === 'syncing') { el.textContent = '↻ Syncing…'; el.className = 'sync-badge syncing'; }
+  else if (status === 'cloud') { el.textContent = '☁ Synced'; el.className = 'sync-badge cloud'; }
+  else { el.textContent = '💾 Local only'; el.className = 'sync-badge local'; }
+}
+
+async function persist() {
+  setSyncBadge('syncing');
+  await saveDay(state);
+  setSaveInd('✓ Saved',true);
+  setSyncBadge(_storageReady ? 'cloud' : 'local');
+  setTimeout(()=>setSaveInd('—',false),1500);
+}
 
 function setSaveInd(txt,ok) {
   const el=document.getElementById('save-ind');
@@ -698,6 +850,133 @@ function switchTab(tab) {
   document.getElementById('panel-today').classList.toggle('hidden',tab!=='today');
   document.getElementById('panel-history').classList.toggle('hidden',tab!=='history');
   if(tab==='history') renderHistory();
+}
+
+// ═══════════════════════════════════════
+// PAST-DAY EDITING
+// ═══════════════════════════════════════
+function openEditPanel(dateKey) {
+  if (editingDate === dateKey) { closeEditPanel(); return; }
+  editingDate = dateKey;
+  editState = { ...getDay(dateKey) };
+  renderEditPanel();
+}
+
+function closeEditPanel() {
+  editingDate = null; editState = null;
+  const existing = document.getElementById('edit-panel');
+  if (existing) existing.remove();
+  // de-highlight rows
+  document.querySelectorAll('#h-body tr.editing').forEach(r => r.classList.remove('editing'));
+}
+
+function renderEditPanel() {
+  const existing = document.getElementById('edit-panel');
+  if (existing) existing.remove();
+
+  const d = editState;
+  const dt = new Date(d.date + 'T00:00:00');
+  const label = dt.toLocaleDateString('en-IN',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+
+  function cb(key, emoji, name, val) {
+    return `<button class="ep-cbtn ${val?'on':''}" onclick="epToggle('${key}')" title="${name}">
+      <span class="ep-icon">${emoji}</span>
+      <span class="ep-name">${name}</span>
+      <span class="ep-chk">${val ? '✓' : '○'}</span>
+    </button>`;
+  }
+
+  const nightMode = d.nightMode || 'study';
+  const panel = document.createElement('div');
+  panel.id = 'edit-panel';
+  panel.className = 'edit-panel';
+  panel.innerHTML = `
+    <div class="ep-hdr">
+      <div class="ep-title">✏️ Editing: <span>${label}</span></div>
+      <button class="ep-close" onclick="closeEditPanel()">✕</button>
+    </div>
+    <div class="ep-tasks">
+      ${cb('exercise','🏃','Exercise', d.exercise)}
+      ${cb('library1','📚','Library I', d.library1)}
+      ${cb('library2','🔬','Library II', d.library2)}
+      ${cb('sports','⚽','Sports', d.sports)}
+      ${cb('nightDone', nightMode==='study'?'🌙':'🎬', nightMode==='study'?'Night Study':'Movie Night', d.nightDone)}
+    </div>
+    <div class="ep-night-row">
+      <span class="ep-nlabel">Night mode:</span>
+      <button class="ep-ntbtn ${nightMode==='study'?'as':''}" onclick="epSetNight('study')">📖 Study</button>
+      <button class="ep-ntbtn ${nightMode==='movie'?'am':''}" onclick="epSetNight('movie')">🎬 Movie</button>
+    </div>
+    <div class="ep-rmk-row">
+      <div class="ep-rlabel">📝 Remark</div>
+      <textarea class="ep-rta" id="ep-remark" oninput="epRmk()">${esc(d.remark||'')}</textarea>
+    </div>
+    <div class="ep-footer">
+      <button class="ep-save" onclick="epSave()">💾 Save Changes</button>
+      <div class="ep-saved" id="ep-saved"></div>
+    </div>
+  `;
+
+  // Insert after the row with this date
+  const rows = document.querySelectorAll('#h-body tr[data-date]');
+  let targetRow = null;
+  rows.forEach(r => { if (r.dataset.date === editingDate) targetRow = r; });
+  // Mark editing row
+  document.querySelectorAll('#h-body tr.editing').forEach(r => r.classList.remove('editing'));
+  if (targetRow) {
+    targetRow.classList.add('editing');
+    const wrapTr = document.createElement('tr');
+    wrapTr.id = 'edit-panel-row';
+    const td = document.createElement('td');
+    td.colSpan = 8;
+    td.appendChild(panel);
+    wrapTr.appendChild(td);
+    targetRow.insertAdjacentElement('afterend', wrapTr);
+  } else {
+    const tbody = document.getElementById('h-body');
+    const wrapTr = document.createElement('tr');
+    wrapTr.id = 'edit-panel-row';
+    const td = document.createElement('td');
+    td.colSpan = 8;
+    td.appendChild(panel);
+    wrapTr.appendChild(td);
+    tbody.prepend(wrapTr);
+  }
+}
+
+function epToggle(key) {
+  editState[key] = !editState[key];
+  renderEditPanel(); // re-render in-place
+}
+
+function epSetNight(mode) {
+  editState.nightMode = mode;
+  renderEditPanel();
+}
+
+function epRmk() {
+  editState.remark = document.getElementById('ep-remark').value;
+}
+
+async function epSave() {
+  // Flush remark textarea
+  const ta = document.getElementById('ep-remark');
+  if (ta) editState.remark = ta.value;
+
+  // If editing today, also update live state
+  if (editingDate === TODAY) {
+    state = { ...editState };
+    renderToday();
+  }
+
+  // Persist via unified saveDay (handles Firestore + localStorage fallback)
+  setSyncBadge('syncing');
+  await saveDay(editState);
+  setSyncBadge(_storageReady ? 'cloud' : 'local');
+
+  const savedEl = document.getElementById('ep-saved');
+  if (savedEl) { savedEl.textContent = '✓ Saved!'; setTimeout(()=>{ if(savedEl) savedEl.textContent=''; },2000); }
+  renderHistory();
 }
 
 // ═══════════════════════════════════════
@@ -725,6 +1004,7 @@ function renderHistory() {
 
   tbody.innerHTML=entries.map(day=>{
     const isToday=day.date===TODAY;
+    const isEditing=day.date===editingDate;
     const dt=new Date(day.date+'T00:00:00');
     const dayName=dt.toLocaleDateString('en-IN',{weekday:'short'});
     const dateLbl=dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'2-digit'});
@@ -732,9 +1012,10 @@ function renderHistory() {
     const nb=day.nightMode==='study'
       ?`<span class="nbadge s">📖 ${day.nightDone?'✓':'—'}</span>`
       :`<span class="nbadge m">🎬 ${day.nightDone?'✓':'—'}</span>`;
-    return `<tr>
+    return `<tr data-date="${day.date}" class="${isEditing?'editing':''}" onclick="openEditPanel('${day.date}')" style="cursor:pointer" title="Click to edit this day">
       <td class="dc">${dateLbl}${isToday?'<span class="today-pill">TODAY</span>':''}
-        <small>${dayName}</small></td>
+        <small>${dayName}</small>
+        <span class="edit-hint">✏️</span></td>
       <td>${ck(day.exercise)}</td>
       <td>${ck(day.library1)}</td>
       <td>${ck(day.library2)}</td>
@@ -747,6 +1028,9 @@ function renderHistory() {
       <td class="rmk-cell" title="${esc(day.remark||'')}">${day.remark?esc(day.remark):'<span style="opacity:.3">—</span>'}</td>
     </tr>`;
   }).join('');
+
+  // Re-insert edit panel if still open
+  if (editingDate) renderEditPanel();
 }
 
 function ck(v){ return `<span class="chk ${v?'y':'n'}">${v?'✓':'✗'}</span>` }
@@ -755,6 +1039,19 @@ function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/
 // ═══════════════════════════════════════
 // START
 // ═══════════════════════════════════════
+
+// Expose functions to global scope (required because this is a module)
+window.toggle       = toggle;
+window.setNightMode = setNightMode;
+window.onRmk        = onRmk;
+window.switchTab    = switchTab;
+window.openEditPanel= openEditPanel;
+window.closeEditPanel=closeEditPanel;
+window.epToggle     = epToggle;
+window.epSetNight   = epSetNight;
+window.epRmk        = epRmk;
+window.epSave       = epSave;
+
 init();
 </script>
 </body>
