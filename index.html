@@ -321,6 +321,26 @@ tbody tr[data-date]:hover .edit-hint{opacity:1}
 .ep-save:hover{opacity:.88;transform:translateY(-1px)}
 .ep-saved{font-family:'DM Mono',monospace;font-size:11px;color:var(--exercise)}
 
+/* ── OWNER BUTTON ── */
+.owner-btn {
+  background: none;
+  border: 1px solid rgba(255,255,255,.1);
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  padding: 5px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .2s;
+}
+.owner-btn:hover { border-color: rgba(255,255,255,.22); color: var(--text); }
+.owner-btn.signed-in {
+  background: rgba(16,185,129,.1);
+  border-color: rgba(16,185,129,.35);
+  color: #10b981;
+}
+
 @media(max-width:500px){
   .stats,.hstats{grid-template-columns:repeat(2,1fr)}
   .tc{width:64px}
@@ -609,6 +629,9 @@ tbody tr[data-date]:hover .edit-hint{opacity:1}
     <div class="li"><div class="ld" style="background:var(--sports)"></div>Sports</div>
     <div class="li"><div class="ld" style="background:var(--sleep)"></div>Sleep</div>
   </div>
+  <div style="margin-top:18px">
+    <button id="owner-btn" class="owner-btn" onclick="ownerLogin()">🔑 Owner login</button>
+  </div>
 </div>
 
 </div><!-- /wrapper -->
@@ -617,8 +640,13 @@ tbody tr[data-date]:hover .edit-hint{opacity:1}
 // ═══════════════════════════════════════
 // FIREBASE  — Firestore cross-device sync
 // ═══════════════════════════════════════
-import { initializeApp }                          from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc }      from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { initializeApp }                                                              from "https://www.gstatic.com/firebasejs/12.14.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc }                                          from "https://www.gstatic.com/firebasejs/12.14.0/firebase-firestore.js";
+import { getAuth, signInWithPopup, signOut, GoogleAuthProvider, onAuthStateChanged }  from "https://www.gstatic.com/firebasejs/12.14.0/firebase-auth.js";
+
+// ── Owner gate ──────────────────────────
+const OWNER_EMAIL = 'shivamk22@iiserb.ac.in';
+let _isOwner = false;  // flips true only when owner is signed in
 
 const firebaseConfig = {
   apiKey:            "AIzaSyBAGV5oH6ssLzzLsWBJJ8bhv-8FP7Xf-D0",
@@ -629,8 +657,11 @@ const firebaseConfig = {
   appId:             "1:693678140047:web:11be646472c6581965defa"
 };
 
-const _app = initializeApp(firebaseConfig);
-const _db  = getFirestore(_app);
+const _app  = initializeApp(firebaseConfig);
+const _db   = getFirestore(_app);
+const _auth = getAuth(_app);
+const _gProvider = new GoogleAuthProvider();
+_gProvider.setCustomParameters({ login_hint: OWNER_EMAIL });
 
 // Single Firestore document holds all days:  users/shivam/data/routine
 const _docRef = doc(_db, 'users', 'shivam', 'data', 'routine');
@@ -703,14 +734,39 @@ async function init() {
   document.getElementById('date-lbl').textContent =
     d.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
 
-  // Show a loading hint on the sync badge
   setSyncBadge('syncing');
-
   await initStorage();
   state = getDay(TODAY);
-
   setSyncBadge(_storageReady ? 'cloud' : 'local');
   renderToday();
+
+  // Watch auth state — quietly keeps owner status in sync
+  onAuthStateChanged(_auth, user => {
+    _isOwner = !!(user && user.email === OWNER_EMAIL);
+    applyOwnerUI();
+  });
+}
+
+// Show/hide interactive controls based on owner status
+function applyOwnerUI() {
+  // All checkboxes + night toggles + remark box
+  const editEls = document.querySelectorAll('.cbtn, .ntbtn, .rmk-ta');
+  editEls.forEach(el => {
+    el.style.pointerEvents = _isOwner ? '' : 'none';
+    el.style.opacity       = _isOwner ? '' : '0.4';
+  });
+  // History rows (past-day editing)
+  document.querySelectorAll('#h-body tr[data-date]').forEach(r => {
+    r.style.cursor = _isOwner ? 'pointer' : 'default';
+  });
+  // Owner login/logout button
+  const btn = document.getElementById('owner-btn');
+  if (btn) {
+    btn.textContent = _isOwner ? '🔓 Signed in as owner — Log out' : '🔑 Owner login';
+    btn.classList.toggle('signed-in', _isOwner);
+  }
+  // Close edit panel if owner just signed out
+  if (!_isOwner && editingDate) closeEditPanel();
 }
 
 // ═══════════════════════════════════════
@@ -799,12 +855,14 @@ function calcBestStreak(all) {
 // INTERACTIONS
 // ═══════════════════════════════════════
 async function toggle(key) {
+  if (!_isOwner) return;
   state[key]=!state[key];
   applyCheck(key==='nightDone'?'night':key, state[key]);
   refreshStats(); await persist();
 }
 
 async function setNightMode(mode) {
+  if (!_isOwner) return;
   state.nightMode=mode;
   applyNightMode(mode);
   refreshStats(); await persist();
@@ -812,6 +870,7 @@ async function setNightMode(mode) {
 
 let rmkTimer;
 function onRmk() {
+  if (!_isOwner) return;
   state.remark=document.getElementById('remark-ta').value;
   clearTimeout(rmkTimer);
   setSaveInd('Saving…',false);
@@ -856,6 +915,7 @@ function switchTab(tab) {
 // PAST-DAY EDITING
 // ═══════════════════════════════════════
 function openEditPanel(dateKey) {
+  if (!_isOwner) return;
   if (editingDate === dateKey) { closeEditPanel(); return; }
   editingDate = dateKey;
   editState = { ...getDay(dateKey) };
@@ -1037,20 +1097,38 @@ function ck(v){ return `<span class="chk ${v?'y':'n'}">${v?'✓':'✗'}</span>` 
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
 
 // ═══════════════════════════════════════
-// START
+// AUTH
 // ═══════════════════════════════════════
+async function ownerLogin() {
+  if (_isOwner) {
+    await signOut(_auth);
+  } else {
+    try {
+      const result = await signInWithPopup(_auth, _gProvider);
+      if (result.user.email !== OWNER_EMAIL) {
+        await signOut(_auth);
+        alert('Access denied. This tracker only allows the owner to edit.');
+      }
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') console.error(e);
+    }
+  }
+}
+
+
 
 // Expose functions to global scope (required because this is a module)
-window.toggle       = toggle;
-window.setNightMode = setNightMode;
-window.onRmk        = onRmk;
-window.switchTab    = switchTab;
-window.openEditPanel= openEditPanel;
-window.closeEditPanel=closeEditPanel;
-window.epToggle     = epToggle;
-window.epSetNight   = epSetNight;
-window.epRmk        = epRmk;
-window.epSave       = epSave;
+window.toggle        = toggle;
+window.setNightMode  = setNightMode;
+window.onRmk         = onRmk;
+window.switchTab     = switchTab;
+window.openEditPanel = openEditPanel;
+window.closeEditPanel= closeEditPanel;
+window.epToggle      = epToggle;
+window.epSetNight    = epSetNight;
+window.epRmk         = epRmk;
+window.epSave        = epSave;
+window.ownerLogin    = ownerLogin;
 
 init();
 </script>
